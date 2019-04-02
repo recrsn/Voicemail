@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fuzzywuzzy = {extras = ["speedup"], version = "*"}
+google-api-python-client = "*"
+"html2text" = "*"
+google-cloud-texttospeech = "*"
+speechrecognition = "*"
+"pyttsx3" = "*"
+"google-auth-httplib2" = "*"
+google-auth-oauthlib = "*"
+pyaudio = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"
