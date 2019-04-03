@@ -38,21 +38,21 @@ def text_to_speech(sentence):
 
 def speech_to_text():
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Say something!")
-        r.adjust_for_ambient_noise(source)
-        audio = r.listen(source)
-
     while True:
-        try:
-            # Speech recognition using Google Speech Recognition
-            # for testing purposes, we're just using the default API key
-            # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-            # instead of `r.recognize_google(audio)`
-            # with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
-            text = r.recognize_google(audio)
-            print("You said: " + text)
-            return text
+        with sr.Microphone() as source:
+            print("Say something!")
+            r.adjust_for_ambient_noise(source)
+            audio = r.listen(source)
 
-        except sr.UnknownValueError:
-            print("Google Speech Recognition could not understand audio")
+            try:
+                # Speech recognition using Google Speech Recognition
+                # for testing purposes, we're just using the default API key
+                # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
+                # instead of `r.recognize_google(audio)`
+                # with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
+                text = r.recognize_google(audio)
+                print("You said: " + text)
+                return text
+
+            except sr.UnknownValueError:
+                print("Google Speech Recognition could not understand audio. Try again")

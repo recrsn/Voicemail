@@ -6,11 +6,35 @@
 """
 from .voice import speech_to_text
 from googleapiclient import errors
-from .authenticate import *
-from .getmessage import *
+from .authenticate import service
+from .getmessage import GetMimeMessage
 import html2text
 import pyttsx3
 
+def response_to_number(response):
+    response = response.lower()
+    if response in ['0', 'zero']:
+        return 0
+    elif response in ['1', 'one']:
+        return 1
+    elif response in ['2', 'two']:
+        return 2
+    elif response in ['3', 'three']:
+        return 3
+    elif response in ['4', 'four']:
+        return 4
+    elif response in ['5', 'five']:
+        return 5
+    elif response in ['6', 'six']:
+        return 6
+    elif response in ['7', 'seven']:
+        return 7
+    elif response in ['8', 'eight']:
+        return 8
+    elif response in ['9', 'nine']:
+        return 9
+
+    return -1
 
 def ListMessagesMatchingQuery(service, user_id, query=''):
     """List all Messages of the user's mailbox matching the query.
@@ -28,7 +52,7 @@ def ListMessagesMatchingQuery(service, user_id, query=''):
       appropriate ID to get the details of a Message.
     """
     try:
-        response = service.users().messages().list(userId=user_id,
+        response = service.users().messages().list(userId=user_id, maxResults=10,
                                                    q=query).execute()
         messages = []
         if 'messages' in response:
@@ -36,7 +60,7 @@ def ListMessagesMatchingQuery(service, user_id, query=''):
 
         while 'nextPageToken' in response:
             page_token = response['nextPageToken']
-            response = service.users().messages().list(userId=user_id, q=query,
+            response = service.users().messages().list(userId=user_id, q=query, 
                                                        pageToken=page_token).execute()
             messages.extend(response['messages'])
 
@@ -60,8 +84,7 @@ def ListMessagesWithLabels(service, user_id, label_ids=[]):
       appropriate id to get the details of a Message.
     """
     try:
-        response = service.users().messages().list(userId=user_id,
-                                                   labelIds=label_ids).execute()
+        response = service.users().messages().list(userId=user_id, labelIds=label_ids).execute()
         messages = []
         if 'messages' in response:
             messages.extend(response['messages'])
@@ -80,15 +103,40 @@ def ListMessagesWithLabels(service, user_id, label_ids=[]):
 
 def speak_message(msg_id, tts):
     message = GetMimeMessage(service, "me", msg_id)
-    a = message.get_payload()
-    b = a[0].get_payload()
-    print(type(b))
+    payload = message.get_payload()
     tts.speak('The subject is : ')
     tts.speak(message['subject'])
-    print(b)
-    tts.speak('The message is : ')
-    tts.speak(b)
 
+    if message.is_multipart():
+        attachments = []
+
+        plain_text = None
+        html = None
+
+        for part in payload:
+            if part.get_content_disposition() == 'attachment':
+                attachments.append(part)
+            elif part.get_content_type() == 'text/plain':
+                plain_text = part
+            elif part.get_content_type() == 'text/html':
+                html = part
+
+        if plain_text is None and html is None:
+            tts.speak('No message text was found')
+        elif plain_text is not None:
+            tts.speak('Message body:')
+            tts.speak(plain_text.get_payload())
+        else:
+            print(html.get_payload())
+            tts.speak('Message type not supported')
+
+        if len(attachments) > 0:
+            tts.speak('Message has %d attachments', len(attachments))
+            for attachment in attachments:
+                tts.speak(attachment.get_filename())
+    else:
+        tts.speak('Message body:')
+        tts.speak(payload)
 
 def searched_message(query, tts):
     number = 0
@@ -121,13 +169,13 @@ def get_message_list(tts):
 
     number = 0
 
-    messageIDs = list()
+    messageIDs = []
     while number < 100:
         messageIDs.append(maillist[number]['id'])
         number = number + 1
 
     number = 0
-    senders = list()
+    senders = []
     while number < 100:
         current_message = GetMimeMessage(service, "me", messageIDs[number])
         senders.append(current_message['from'])
@@ -156,7 +204,10 @@ def get_message_list(tts):
         if response.lower() == 'next':
             number = number+1
             continue
-        response = int(response)
+
+        response = response_to_number(response)
+        if response == -1:
+            continue
 
         speak_message(messageIDs[response], tts)
 

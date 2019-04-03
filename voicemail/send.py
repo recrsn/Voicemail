@@ -20,10 +20,10 @@ from .authenticate import service
 from .voice import speech_to_text
 
 def breakdown(file):
-    return re.sub(r'^\w',' ', file.replace('.',' dot ').replace('_', ' underscore ').replace('-',' hypen '))
+    return re.sub(r'[^a-z]',' ', file.replace('.',' dot ').replace('_', ' underscore ').replace('-',' hypen '))
 
 def generate_fuzzy_match_clients(files):
-    return { breakdown(file):file for file in files }
+    return { breakdown(file.lower()):file for file in files }
 
 def create_message(sender, to, subject, message_text, attachments):
 
@@ -56,7 +56,7 @@ def create_message(sender, to, subject, message_text, attachments):
         msg.add_header('Content-Disposition', 'attachment', filename=filename)
         message.attach(msg)
 
-    return {'raw': base64.urlsafe_b64encode(message.as_string())}
+    return {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode('ascii') }
 
 
 def send_message(tts):
@@ -102,8 +102,9 @@ def send_message(tts):
 
             choices = generate_fuzzy_match_clients(files)
 
-            selected_file = choices[process.extractOne(file_name, choices.keys())]
+            selected_file = choices[process.extractOne(file_name, choices.keys())[0]]
             
+            print('Attached file:', selected_file)
             attachments.append(os.path.join(folder, selected_file))
 
             tts.speak('Do you want to add more attachments?')
@@ -115,9 +116,8 @@ def send_message(tts):
     created_message = create_message(
         'me', to, subject, message_text, attachments)
     try:
-        message = (service.users().messages().send(userId='me', body=create_message)
-                   .execute())
-        print('Message Id: %s' % message['id'])
+        message = service.users().messages().send(userId='me', body=created_message).execute()
+        print('Sent message with message id:', message['id'])
         print(message)
         return message
     except errors.HttpError as error:
