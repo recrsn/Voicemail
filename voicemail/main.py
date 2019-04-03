@@ -16,7 +16,7 @@ def main():
         first_response = speech_to_text()
 
         if first_response == '1':
-            print('send message')
+            print('Getting ready to compose message...')
             send_message(tts)
 
         elif first_response.lower() in ['2', 'tu', 'two', 'to']:
@@ -25,7 +25,7 @@ def main():
             receive_response = speech_to_text()
 
             if receive_response.lower() in ['1', 'one']:
-                print('get message list')
+                print('Showing top 10 messages...')
                 get_message_list(tts)
             elif receive_response.lower() in ['2', 'tu', 'two', 'to']:
                 tts.speak('Say the E-Mail of the sender!')

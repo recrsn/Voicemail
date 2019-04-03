@@ -52,7 +52,7 @@ def GetMimeMessage(service, user_id, msg_id):
  
     msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII'))
 
-    mime_msg = email.message_from_string(msg_str)
+    mime_msg = email.message_from_bytes(msg_str)
 
     return mime_msg
   except errors.HttpError as error:
