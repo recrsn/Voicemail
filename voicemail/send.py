@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import mimetypes
 import os
+import re
 
 from fuzzywuzzy import process
 
@@ -18,6 +19,11 @@ from googleapiclient import errors
 from .authenticate import service
 from .voice import speech_to_text
 
+def breakdown(file):
+    return re.sub(r'^\w',' ', file.replace('.',' dot ').replace('_', ' underscore ').replace('-',' hypen '))
+
+def generate_fuzzy_match_clients(files):
+    return { breakdown(file):file for file in files }
 
 def create_message(sender, to, subject, message_text, attachments):
 
@@ -88,11 +94,16 @@ def send_message(tts):
                 tts.speak('Directory not recognized')
                 continue
 
-            folder = os.path.join('~', directory.capitalize())
+            folder = os.path.expanduser(os.path.join('~', directory.capitalize()))
 
             tts.speak('Which file do you want to send?')
             file_name = speech_to_text()
-            selected_file = process.extractOne(file_name, os.listdir(folder))
+            files = os.listdir(folder)
+
+            choices = generate_fuzzy_match_clients(files)
+
+            selected_file = choices[process.extractOne(file_name, choices.keys())]
+            
             attachments.append(os.path.join(folder, selected_file))
 
             tts.speak('Do you want to add more attachments?')
